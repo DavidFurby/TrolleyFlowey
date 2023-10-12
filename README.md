@@ -21,24 +21,31 @@ Assumptions: If one route is to have increased resources, another should decreas
 import numpy as np
 
 def main():
+    np.random.seed(0)  # Set a random seed for reproducibility
+
     Demand = {'low': 0.9, 'normal': 1, 'high': 1.1}
     Weather = {'Sunny': 1.1, 'Cloudy': 1, 'Rainy':0.9}
-    Routes = [{'routeId': 1, 'demand':'normal', 'destinations':[{'name': "amusement park", 'outdoors': True, 'demand': "high"}, {'name': "Museum", 'outdoors': False, 'demand': "low"}]}]
+    Routes = [
+        {'routeId': 1, 'expected_demand':'normal', 'destinations':[{'name': "amusement park", 'outdoors': True, 'expected_demand': "high"}, {'name': "Museum", 'outdoors': False, 'expected_demand': "low"}]},
+        {'routeId': 2, 'expected_demand':'high', 'destinations':[{'name': "Zoo", 'outdoors': True, 'expected_demand': "normal"}]},
+        {'routeId': 3, 'expected_demand':'low', 'destinations':[{'name': "Mall", 'outdoors': False, 'expected_demand': "high"}, {'name': "Aquarium", 'outdoors': False, 'expected_demand': "normal"}]}
+    ]
     weather_today =  {'mostLikely': "Sunny"}
 
     # Training data
     training_data = [
-        {'weather': 'Sunny', 'routeId': 1, 'destinations': [{'name': "amusement park", 'outdoors': True, 'demand': "high"}, {'name': "Museum", 'outdoors': False, 'demand': "low"}], 'demand':'normal', 'actual_demand': 1.2},
-        {'weather': 'Cloudy', 'routeId': 2, 'destinations': [{'name': "Zoo", 'outdoors': True, 'demand': "normal"}], 'demand':'high', 'actual_demand': 0.9},
-        {'weather': 'Rainy', 'routeId': 3, 'destinations': [{'name': "Mall", 'outdoors': False, 'demand': "high"}, {'name': "Aquarium", 'outdoors': False, 'demand': "normal"}], 'demand':'low', 'actual_demand': 0.8},
+        {'weather': 'Sunny', 'routeId': 1, 'destinations':[{'name': "amusement park", 'outdoors': True, 'expected_demand': "high"}, {'name': "Museum", 'outdoors': False, 'expected_demand': "low"}], 'expected_demand':'normal', 'actual_demand': 1.2},
+        {'weather': 'Cloudy', 'routeId': 2, 'destinations':[{'name': "Zoo", 'outdoors': True, 'expected_demand': "normal"}], 'expected_demand':'high', 'actual_demand': 0.9},
+        {'weather': 'Rainy', 'routeId': 3, 'destinations':[{'name': "Mall", 'outdoors': False, 'expected_demand': "high"}, {'name': "Aquarium", 'outdoors': False, 'expected_demand': "normal"}], 'expected_demand':'low', 'actual_demand': 0.8},
         # Add more training examples here
     ]
 
-    test_data = [{'weather' : weather_today['mostLikely'], 
-                  'routeId' : route['routeId'], 
-                  'demand' : route['demand'], 
-                  'destinations' : route['destinations']} for route in Routes]    
 
+    test_data = [{'weather' : weather_today['mostLikely'], 
+              'routeId' : route['routeId'], 
+              'expected_demand' : route['expected_demand'], 
+              'destinations' : route['destinations']} for i,route in enumerate(Routes)]
+                  
     def hidden_activation(z):
         # ReLU activation.
         return np.maximum(0, z)
@@ -46,35 +53,62 @@ def main():
     def output_activation(z):
         # identity (linear) activation.
         return z
+
+    def mse_loss(y_true, y_pred):
+        return np.mean(np.square(y_true - y_pred))
+    
+    def mse_loss_derivative(y_true, y_pred):
+        return 2 * (y_pred - y_true)
     
     # Define weights
-    routeWeighs = np.random.rand(len(test_data))
-    weatherWeighs = np.random.rand();
-    weightChange = 0.2
+    routeWeights = np.random.rand(len(test_data))
+    weatherWeighs = np.random.rand()
+    learning_rate = 0.1
     
-    for turns in range(10):
-        for i, route in enumerate(test_data):
-            demands = []
+    for turns in range(1000):
+        grads = []  # Reset gradients at the start of each epoch
+        for i, route in enumerate(training_data):
+            listOfDemands = []
             for j, destination in enumerate(route['destinations']):
                 weather_multiplier = int(destination['outdoors']) * Weather[weather_today['mostLikely']]
-                demand = Demand[destination['demand']] * (weather_multiplier * weatherWeighs)
-                demands.append(demand)
-            averages = [np.mean(demand) for demand in demands]
-            h1_in = np.dot(Demand[route['demand']] * routeWeighs[i], averages)
+                demand = Demand[destination['expected_demand']] * (weather_multiplier * weatherWeighs)
+                listOfDemands.append(demand)
+            error = 0
+            h1_in = Demand[route['expected_demand']] * routeWeights[i] * np.mean(listOfDemands) 
             h1_out = hidden_activation(h1_in)
             out = output_activation(h1_out)
-            error = out - training_data[i]['actual_demand']
-            print(error[i])
-            if error[i] < 0:
-                routeWeighs += weightChange
-                weatherWeighs += weightChange
-            if error[i] > 0:
-                routeWeighs -= weightChange
-                weatherWeighs -= weightChange
-        
-        
+            error = mse_loss(training_data[i]['actual_demand'], out)
+            derror_dout = mse_loss_derivative(training_data[i]['actual_demand'], out)
+            dout_dh1out = 1
+            dh1out_dh1in = h1_out > 0
+            dh1in_dw = demand
+            grad = derror_dout * dout_dh1out * dh1out_dh1in * dh1in_dw
+            grads.append(grad)
+            print("ID:", route['routeId'])
+            print('Actual demand:', training_data[i]['actual_demand'])
+            print('Predicted demand:', out)
+            print('Error:', error)
+            # Update weights using average gradient
+            routeWeights -= learning_rate * np.mean(grads)
+            weatherWeighs -= learning_rate * np.mean(grads)
+        # After training the model
+    for i, route in enumerate(test_data):
+        listOfDemands = []
+        for j, destination in enumerate(route['destinations']):
+            weather_multiplier = int(destination['outdoors']) * Weather[weather_today['mostLikely']]
+            demand = Demand[destination['expected_demand']] * (weather_multiplier * weatherWeighs)
+            listOfDemands.append(demand)
+        h1_in = Demand[route['expected_demand']] * routeWeights[i] * np.mean(listOfDemands) 
+        h1_out = hidden_activation(h1_in)
+        out = output_activation(h1_out)
+        print("ID:", route['routeId'])
+        print('Predicted demand:', out)
+
+
 
 main()
+
+
 ```
 
 
