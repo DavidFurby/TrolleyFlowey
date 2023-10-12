@@ -18,12 +18,50 @@ Assumptions: If one route is to have increased resources, another should decreas
 
 
 ```
-Def main():
+import numpy as np
 
-Routes = [{routeId = 1, activeTrolleys = 2, demand= normal}];
+def main():
+    Demand = {'low': 0.9, 'normal': 1, 'high': 1.1}
+    Weather = {'Sunny': 1.1, 'Cloudy': 1, 'Rainy':0.9}
+    Routes = [{'routeId': 1, 'demand':'normal', 'destinations':[{'name': "amusement park", 'outdoors': True, 'demand': "high"}, {'name': "Museum", 'outdoors': False, 'demand': "low"}]}]
+    weather_today =  {'mostLikely': "Sunny"}
+
+    # Training data
+    training_data = [
+        {'weather': 'Sunny', 'routeId': 1, 'destinations': [{'name': "amusement park", 'outdoors': True, 'demand': "high"}, {'name': "Museum", 'outdoors': False, 'demand': "low"}], 'demand':'normal', 'actual_demand': 1.2},
+        {'weather': 'Cloudy', 'routeId': 2, 'destinations': [{'name': "Zoo", 'outdoors': True, 'demand': "normal"}], 'demand':'high', 'actual_demand': 0.9},
+        {'weather': 'Rainy', 'routeId': 3, 'destinations': [{'name': "Mall", 'outdoors': False, 'demand': "high"}, {'name': "Aquarium", 'outdoors': False, 'demand': "normal"}], 'demand':'low', 'actual_demand': 0.8},
+        # Add more training examples here
+    ]
+
+    test_data = [{'weather' : weather_today['mostLikely'], 
+                  'routeId' : route['routeId'], 
+                  'demand' : route['demand'], 
+                  'destinations' : route['destinations']} for route in Routes]    
+
+    def hidden_activation(z):
+        # ReLU activation.
+        return np.maximum(0, z)
+
+    def output_activation(z):
+        # identity (linear) activation.
+        return z
+    for i, route in enumerate(test_data):
+        demands = []
+        for destination in route['destinations']:
+            weather_multiplier = int(destination['outdoors']) * Weather[weather_today['mostLikely']]
+            demand = Demand[destination['demand']] * weather_multiplier
+            demands.append(demand)
+        averages = [np.mean(demand) for demand in demands]
+        h1_in = np.dot(Demand[route['demand']], averages)
+        h1_out = hidden_activation(h1_in)
+        out = output_activation(h1_out)
+    print(out)
+
+main()
+```
 
 
-RouteActivityPerHour = [{hour = "08:00", averagePassengerAmountPerTrip=300}]
 
 
 Data sources:
