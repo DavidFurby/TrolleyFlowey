@@ -46,17 +46,33 @@ def main():
     def output_activation(z):
         # identity (linear) activation.
         return z
-    for i, route in enumerate(test_data):
-        demands = []
-        for destination in route['destinations']:
-            weather_multiplier = int(destination['outdoors']) * Weather[weather_today['mostLikely']]
-            demand = Demand[destination['demand']] * weather_multiplier
-            demands.append(demand)
-        averages = [np.mean(demand) for demand in demands]
-        h1_in = np.dot(Demand[route['demand']], averages)
-        h1_out = hidden_activation(h1_in)
-        out = output_activation(h1_out)
-    print(out)
+    
+    # Define weights
+    routeWeighs = np.random.rand(len(test_data))
+    weatherWeighs = np.random.rand();
+    weightChange = 0.2
+    
+    for turns in range(10):
+        for i, route in enumerate(test_data):
+            demands = []
+            for j, destination in enumerate(route['destinations']):
+                weather_multiplier = int(destination['outdoors']) * Weather[weather_today['mostLikely']]
+                demand = Demand[destination['demand']] * (weather_multiplier * weatherWeighs)
+                demands.append(demand)
+            averages = [np.mean(demand) for demand in demands]
+            h1_in = np.dot(Demand[route['demand']] * routeWeighs[i], averages)
+            h1_out = hidden_activation(h1_in)
+            out = output_activation(h1_out)
+            error = out - training_data[i]['actual_demand']
+            print(error[i])
+            if error[i] < 0:
+                routeWeighs += weightChange
+                weatherWeighs += weightChange
+            if error[i] > 0:
+                routeWeighs -= weightChange
+                weatherWeighs -= weightChange
+        
+        
 
 main()
 ```
