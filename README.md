@@ -20,32 +20,166 @@ Assumptions: If one route is to have increased resources, another should decreas
 ```
 import numpy as np
 
+
 def main():
     np.random.seed(0)  # Set a random seed for reproducibility
 
-    Demand = {'low': 0.9, 'normal': 1, 'high': 1.1}
-    Weather = {'Sunny': 1.1, 'Cloudy': 1, 'Rainy':0.9}
+    class Destination:
+        def __init__(self, name, outdoors, attraction_type, expected_demand):
+            self.name = name
+            self.outdoors = outdoors
+            self.attraction_type = attraction_type
+            self.expected_demand = expected_demand
+
+    class Route:
+        def __init__(self, route_id, expected_demand, destinations):
+            self.route_id = route_id
+            self.expected_demand = expected_demand
+            self.destinations = [destination for destination in destinations]
+
+    Demand = {"low": 0.9, "normal": 1, "high": 1.1}
+    Weather = {"Sunny": 1.1, "Cloudy": 1, "Rainy": 0.9}
+    AttractionType = {"Leisure": 1.1, "Both": 1, "Work": 0.9}
     Routes = [
-        {'routeId': 1, 'expected_demand':'normal', 'destinations':[{'name': "amusement park", 'outdoors': True, 'expected_demand': "high"}, {'name': "Museum", 'outdoors': False, 'expected_demand': "low"}]},
-        {'routeId': 2, 'expected_demand':'high', 'destinations':[{'name': "Zoo", 'outdoors': True, 'expected_demand': "normal"}]},
-        {'routeId': 3, 'expected_demand':'low', 'destinations':[{'name': "Mall", 'outdoors': False, 'expected_demand': "high"}, {'name': "Aquarium", 'outdoors': False, 'expected_demand': "normal"}]}
+        Route(
+            1,
+            Demand["high"],
+            [
+                Destination(
+                    "amusement park", True, AttractionType["Leisure"], Demand["high"]
+                ),
+                Destination("Museum", False, AttractionType["Leisure"], Demand["low"]),
+            ],
+        ),
+        Route(
+            2,
+            Demand["high"],
+            [
+                Destination("Zoo", True, AttractionType["Leisure"], Demand["normal"]),
+            ],
+        ),
+        Route(
+            3,
+            Demand["low"],
+            [
+                Destination("Mall", False, AttractionType["Both"], Demand["high"]),
+                Destination(
+                    "Aquarium", False, AttractionType["Leisure"], Demand["normal"]
+                ),
+            ],
+        ),
     ]
-    weather_today =  {'mostLikely': "Sunny"}
+
+    weather_today = {"mostLikely": "Sunny"}
+    dayOfWeek_today = {"dayOfWeek": "Weekend"}
 
     # Training data
     training_data = [
-        {'weather': 'Sunny', 'routeId': 1, 'destinations':[{'name': "amusement park", 'outdoors': True, 'expected_demand': "high"}, {'name': "Museum", 'outdoors': False, 'expected_demand': "low"}], 'expected_demand':'normal', 'actual_demand': 1.2},
-        {'weather': 'Cloudy', 'routeId': 2, 'destinations':[{'name': "Zoo", 'outdoors': True, 'expected_demand': "normal"}], 'expected_demand':'high', 'actual_demand': 0.9},
-        {'weather': 'Rainy', 'routeId': 3, 'destinations':[{'name': "Mall", 'outdoors': False, 'expected_demand': "high"}, {'name': "Aquarium", 'outdoors': False, 'expected_demand': "normal"}], 'expected_demand':'low', 'actual_demand': 0.8},
-        # Add more training examples here
+        {
+            "weather": "Sunny",
+            "dayOfWeek": "Weekend",
+            "route": Route(
+                1,
+                "normal",
+                [
+                    Destination(
+                        "Amusement park",
+                        True,
+                        AttractionType["Leisure"],
+                        Demand["high"],
+                    ),
+                    Destination("Museum", False, AttractionType["Both"], Demand["low"]),
+                ],
+            ),
+            "actual_demand": 1.2,
+        },
+        {
+            "weather": "Cloudy",
+            "dayOfWeek": "Weekday",
+            "route": Route(
+                2,
+                "high",
+                [
+                    Destination(
+                        "Zoo", True, AttractionType["Leisure"], Demand["normal"]
+                    ),
+                ],
+            ),
+            "actual_demand": 0.9,
+        },
+        {
+            "weather": "Rainy",
+            "dayOfWeek": "Weekday",
+            "route": Route(
+                3,
+                "low",
+                [
+                    Destination("Mall", False, AttractionType["Both"], Demand["high"]),
+                    Destination(
+                        "Aquarium", False, AttractionType["Leisure"], Demand["normal"]
+                    ),
+                ],
+            ),
+            "actual_demand": 0.8,
+        },
+        {
+            "weather": "Sunny",
+            "dayOfWeek": "WeekEnd",
+            "route": Route(
+                4,
+                "high",
+                [
+                    Destination(
+                        "Beach", True, AttractionType["Leisure"], Demand["high"]
+                    ),
+                    Destination(
+                        "Cafe", False, AttractionType["Both"], Demand["normal"]
+                    ),
+                ],
+            ),
+            "actual_demand": 1.3,
+        },
+        {
+            "weather": "Cloudy",
+            "dayOfWeek": "WeekEnd",
+            "route": Route(
+                5,
+                "normal",
+                [Destination("Park", True, AttractionType["Leisure"], Demand["low"])],
+            ),
+            "actual_demand": 0.95,
+        },
+        {
+            "weather": "Rainy",
+            "dayOfWeek": "Weekday",
+            "route": Route(
+                6,
+                "high",
+                [
+                    Destination(
+                        "Cinema", False, AttractionType["Leisure"], Demand["high"]
+                    ),
+                    Destination(
+                        "Restaurant", False, AttractionType["Leisure"], Demand["high"]
+                    ),
+                    Destination(
+                        "University", False, AttractionType["Work"], Demand["high"]
+                    ),
+                ],
+            ),
+            "actual_demand": 1.1,
+        },
     ]
 
+    test_data = [
+        {
+            "weather": weather_today["mostLikely"],
+            "dayOfWeek": dayOfWeek_today["dayOfWeek"],
+            "route": route,
+        }
+        for route in Routes
+    ]
 
-    test_data = [{'weather' : weather_today['mostLikely'], 
-              'routeId' : route['routeId'], 
-              'expected_demand' : route['expected_demand'], 
-              'destinations' : route['destinations']} for i,route in enumerate(Routes)]
-                  
     def hidden_activation(z):
         # ReLU activation.
         return np.maximum(0, z)
@@ -54,60 +188,166 @@ def main():
         # identity (linear) activation.
         return z
 
-    def mse_loss(y_true, y_pred):
-        return np.mean(np.square(y_true - y_pred))
-    
     def mse_loss_derivative(y_true, y_pred):
         return 2 * (y_pred - y_true)
-    
-    # Define weights
-    routeWeights = np.random.rand(len(test_data))
-    weatherWeighs = np.random.rand()
-    learning_rate = 0.1
-    
-    for turns in range(1000):
-        grads = []  # Reset gradients at the start of each epoch
-        for i, route in enumerate(training_data):
-            listOfDemands = []
-            for j, destination in enumerate(route['destinations']):
-                weather_multiplier = int(destination['outdoors']) * Weather[weather_today['mostLikely']]
-                demand = Demand[destination['expected_demand']] * (weather_multiplier * weatherWeighs)
-                listOfDemands.append(demand)
-            error = 0
-            h1_in = Demand[route['expected_demand']] * routeWeights[i] * np.mean(listOfDemands) 
-            h1_out = hidden_activation(h1_in)
-            out = output_activation(h1_out)
-            error = mse_loss(training_data[i]['actual_demand'], out)
-            derror_dout = mse_loss_derivative(training_data[i]['actual_demand'], out)
-            dout_dh1out = 1
-            dh1out_dh1in = h1_out > 0
-            dh1in_dw = demand
-            grad = derror_dout * dout_dh1out * dh1out_dh1in * dh1in_dw
-            grads.append(grad)
-            print("ID:", route['routeId'])
-            print('Actual demand:', training_data[i]['actual_demand'])
-            print('Predicted demand:', out)
-            print('Error:', error)
-            # Update weights using average gradient
-            routeWeights -= learning_rate * np.mean(grads)
-            weatherWeighs -= learning_rate * np.mean(grads)
-        # After training the model
-    for i, route in enumerate(test_data):
-        listOfDemands = []
-        for j, destination in enumerate(route['destinations']):
-            weather_multiplier = int(destination['outdoors']) * Weather[weather_today['mostLikely']]
-            demand = Demand[destination['expected_demand']] * (weather_multiplier * weatherWeighs)
-            listOfDemands.append(demand)
-        h1_in = Demand[route['expected_demand']] * routeWeights[i] * np.mean(listOfDemands) 
-        h1_out = hidden_activation(h1_in)
-        out = output_activation(h1_out)
-        print("ID:", route['routeId'])
-        print('Predicted demand:', out)
 
+    # Define weights
+    hidden1_weights = np.random.rand(2, 2)
+    hidden2_weights = np.random.rand(2, 2)
+    hidden3_weights = np.random.rand(2, 1)
+    learning_rate = 0.001
+
+    def update_weights(
+        learning_rate,
+        hidden1_grads,
+        hidden2_grads,
+        hidden3_grads,
+        hidden1_weights,
+        hidden2_weights,
+        hidden3_weights,
+    ):
+        hidden1_weights -= learning_rate * np.mean(hidden1_grads)
+        hidden2_weights -= learning_rate * np.mean(hidden2_grads)
+        hidden3_weights -= learning_rate * np.mean(hidden3_grads)
+        return hidden1_weights, hidden2_weights, hidden3_weights
+
+    def calculate_gradient(
+        actual_demand,
+        out,
+        h2_out,
+        h1_out,
+        h1_weight,
+        h2_weight,
+        h3_weight,
+    ):
+        # Calculate error
+        error_out = mse_loss_derivative(actual_demand, out)
+        # Calculate derivatives
+        dh1out_dh1in = (h1_out > 0).astype(float)  # derivative of ReLU
+        dh2out_dh2in = (h2_out > 0).astype(float)  # derivative of ReLU
+
+        # Calculate gradients
+        hidden0_grad = (
+            error_out * h1_weight * h3_weight * dh2out_dh2in * h2_weight * dh1out_dh1in
+        )
+        hidden2_grad = error_out * h3_weight * dh2out_dh2in * h2_weight
+        hidden3_grad = error_out * h3_weight
+        return hidden0_grad, hidden2_grad, hidden3_grad
+
+    def predict_demand(data, hidden1_weights, hidden2_weights, hidden3_weights):
+        weather_input = (
+            np.mean(
+                [
+                    int(destination.outdoors) * Weather[data["weather"]]
+                    for destination in data["route"].destinations
+                ]
+            )
+            if data["route"].destinations
+            else 0
+        )
+        destination_demand_input = (
+            np.mean(
+                [
+                    destination.expected_demand
+                    for destination in data["route"].destinations
+                ]
+            )
+            if data["route"].destinations
+            else 0
+        )
+        # Create an input array with the averages
+        input_array = np.array([weather_input, destination_demand_input])
+
+        h1_in = np.dot(input_array, hidden1_weights)
+        h1_out = hidden_activation(h1_in)
+        h2_in = np.dot(h1_out, hidden2_weights)
+        h2_out = hidden_activation(h2_in)
+        out_in = np.dot(h2_out, hidden3_weights)
+        out = output_activation(out_in)
+        return out, h1_out, h2_out
+
+    def train_model(
+        training_data,
+        learning_rate,
+        hidden1_weights,
+        hidden2_weights,
+        hidden3_weights,
+    ):
+        for turns in range(100):
+            hidden1_grad_list = []
+            hidden2_grad_list = []
+            hidden3_grad_list = []
+
+            for data in training_data:
+                out, h1_out, h2_out = predict_demand(
+                    data,
+                    hidden1_weights,
+                    hidden2_weights,
+                    hidden3_weights,
+                )
+
+                (
+                    hidden1_grad,
+                    hidden2_grad,
+                    hidden3_grad,
+                ) = calculate_gradient(
+                    data["actual_demand"],
+                    out,
+                    h2_out,
+                    h1_out,
+                    hidden1_weights,
+                    hidden2_weights,
+                    hidden3_weights,
+                )
+
+                hidden1_grad_list.append(hidden1_grad)
+                hidden2_grad_list.append(hidden2_grad)
+                hidden3_grad_list.append(hidden3_grad)
+
+                (
+                    hidden1_weights,
+                    hidden2_weights,
+                    hidden3_weights,
+                ) = update_weights(
+                    learning_rate,
+                    hidden1_grad_list,
+                    hidden2_grad_list,
+                    hidden3_grad_list,
+                    hidden1_weights,
+                    hidden2_weights,
+                    hidden3_weights,
+                )
+
+        return hidden1_weights, hidden2_weights, hidden3_weights
+
+    def test_model(test_data, hidden1_weights, hidden2_weights, hidden3_weights):
+        for data in test_data:
+            (
+                out,
+                _,
+                _,
+            ) = predict_demand(data, hidden1_weights, hidden2_weights, hidden3_weights)
+            print("ID:", data["route"].route_id)
+            print("Predicted demand:", out)
+
+    # Train the model
+    hidden1_weights, hidden2_weights, hidden3_weights = train_model(
+        training_data,
+        learning_rate,
+        hidden1_weights,
+        hidden2_weights,
+        hidden3_weights,
+    )
+    # Test the model
+    test_model(
+        test_data,
+        hidden1_weights,
+        hidden2_weights,
+        hidden3_weights,
+    )
 
 
 main()
-
 
 ```
 
