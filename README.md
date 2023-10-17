@@ -9,10 +9,9 @@ Improve the schedule of trolley transportation by predicting demand using variab
 
 
 ## How it works
-The tool will identify routes that might be over or underrepresented based on data analysis and may be used to suggest changes in the future use of these routes. Its primary function is to quickly identify routes that might demand more resources in real time. It can take into consideration the weather, what type of day it is and what popular destinations exist on the routes. Knowing the weather by itself won't tell us much. If it's bad weather then we can assume that all routes are going to be more popular since people will decide to go by trolley instead of walking. But knowing possible destinations combined with the weather and maybe the day might tell us where people are more likely to go. If it's sunny and the weekend, it's more likely the route going to an amusement park will be more popular. If it's raining and almost Christmas, it's likely that more people will go to the shopping mall. 
-Resources: By ‘resources’, it refers not only to trolleys but also to temporary bus routes or extra personnel, depending on the demand of a particular route at a given time.
-Assumptions: If one route is to have increased resources, another should decrease correspondingly. Weather might not be a significant variable, as it’s assumed that weather conditions will be the same across the entire transportation area. Therefore, if bad weather were a factor in increasing resources, those added resources would presumably be needed for all other routes as well.
+The tool will identify routes that might be over or underrepresented based on data analysis and may be used to suggest changes in the future use of these routes. Its primary function is to quickly identify routes that might demand more resources in real time. It can take into consideration the weather, what type of day it is, and what popular destinations exist on the routes. Knowing the weather by itself won't tell us much. If it's bad weather then we can assume that all routes are going to be more popular since people will decide to go by trolley instead of walking. But knowing possible destinations combined with the weather and maybe the day might tell us where people are more likely to go. If it's sunny and the weekend, it's more likely the route going to an amusement park will be more popular. If it's raining and almost Christmas, it's likely that more people will go to the shopping mall. 
 
+Assumptions: If one route is to have increased resources, another should decrease correspondingly.
 
 
 
@@ -365,8 +364,6 @@ Google Maps Platform Documentation  |  Distance Matrix API  |  Google for Develo
 Weather API - OpenWeatherMap
 
 Initially, the project will be using general APIs:s to make predictions. Avoiding API:S for specific trolley services (like the one for my city) means it's going to have a more dynamic use that can be applied in other circumstances. 
-
-Where does your data come from? Do you collect it yourself or do you use data collected by someone else?
 
 
 
