@@ -39,6 +39,7 @@ def main():
 
     Demand = {"low": 0.9, "normal": 1, "high": 1.1}
     Weather = {"Sunny": 1.1, "Cloudy": 1, "Rainy": 0.9}
+    DayOfWeek = {"Weekend": 1.1, "Weekday": 0.9}
     AttractionType = {"Leisure": 1.1, "Both": 1, "Work": 0.9}
     Routes = [
         Route(
@@ -70,14 +71,14 @@ def main():
         ),
     ]
 
-    weather_today = {"mostLikely": "Sunny"}
-    dayOfWeek_today = {"dayOfWeek": "Weekend"}
+    weather_today = {"mostLikely": Weather["Sunny"]}
+    dayOfWeek_today = {"dayOfWeek": DayOfWeek["Weekend"]}
 
     # Training data
     training_data = [
         {
-            "weather": "Sunny",
-            "dayOfWeek": "Weekend",
+            "weather": Weather["Rainy"],
+            "dayOfWeek": DayOfWeek["Weekend"],
             "route": Route(
                 1,
                 "normal",
@@ -94,8 +95,8 @@ def main():
             "actual_demand": 1.2,
         },
         {
-            "weather": "Cloudy",
-            "dayOfWeek": "Weekday",
+            "weather": Weather["Cloudy"],
+            "dayOfWeek": DayOfWeek["Weekend"],
             "route": Route(
                 2,
                 "high",
@@ -108,8 +109,8 @@ def main():
             "actual_demand": 0.9,
         },
         {
-            "weather": "Rainy",
-            "dayOfWeek": "Weekday",
+            "weather": Weather["Rainy"],
+            "dayOfWeek": DayOfWeek["Weekday"],
             "route": Route(
                 3,
                 "low",
@@ -123,8 +124,8 @@ def main():
             "actual_demand": 0.8,
         },
         {
-            "weather": "Sunny",
-            "dayOfWeek": "WeekEnd",
+            "weather": Weather["Sunny"],
+            "dayOfWeek": DayOfWeek["Weekend"],
             "route": Route(
                 4,
                 "high",
@@ -140,8 +141,8 @@ def main():
             "actual_demand": 1.3,
         },
         {
-            "weather": "Cloudy",
-            "dayOfWeek": "WeekEnd",
+            "weather": Weather["Cloudy"],
+            "dayOfWeek": DayOfWeek["Weekday"],
             "route": Route(
                 5,
                 "normal",
@@ -150,8 +151,8 @@ def main():
             "actual_demand": 0.95,
         },
         {
-            "weather": "Rainy",
-            "dayOfWeek": "Weekday",
+            "weather": Weather["Rainy"],
+            "dayOfWeek": DayOfWeek["Weekend"],
             "route": Route(
                 6,
                 "high",
@@ -192,7 +193,7 @@ def main():
         return 2 * (y_pred - y_true)
 
     # Define weights
-    hidden1_weights = np.random.rand(2, 2)
+    hidden1_weights = np.random.rand(3, 2)
     hidden2_weights = np.random.rand(2, 2)
     hidden3_weights = np.random.rand(2, 1)
     learning_rate = 0.001
@@ -216,7 +217,6 @@ def main():
         out,
         h2_out,
         h1_out,
-        h1_weight,
         h2_weight,
         h3_weight,
     ):
@@ -227,18 +227,16 @@ def main():
         dh2out_dh2in = (h2_out > 0).astype(float)  # derivative of ReLU
 
         # Calculate gradients
-        hidden0_grad = (
-            error_out * h1_weight * h3_weight * dh2out_dh2in * h2_weight * dh1out_dh1in
-        )
-        hidden2_grad = error_out * h3_weight * dh2out_dh2in * h2_weight
-        hidden3_grad = error_out * h3_weight
-        return hidden0_grad, hidden2_grad, hidden3_grad
+        hidden3_grad = error_out
+        hidden2_grad = error_out * h3_weight * dh2out_dh2in
+        hidden1_grad = hidden2_grad * h2_weight * dh1out_dh1in
+        return hidden1_grad, hidden2_grad, hidden3_grad
 
     def predict_demand(data, hidden1_weights, hidden2_weights, hidden3_weights):
         weather_input = (
             np.mean(
                 [
-                    int(destination.outdoors) * Weather[data["weather"]]
+                    int(destination.outdoors) * data["weather"]
                     for destination in data["route"].destinations
                 ]
             )
@@ -255,8 +253,16 @@ def main():
             if data["route"].destinations
             else 0
         )
+        day_of_week_input = np.mean(
+            [
+                destination.attraction_type * data["dayOfWeek"]
+                for destination in data["route"].destinations
+            ]
+        )
         # Create an input array with the averages
-        input_array = np.array([weather_input, destination_demand_input])
+        input_array = np.array(
+            [weather_input, destination_demand_input, day_of_week_input]
+        )
 
         h1_in = np.dot(input_array, hidden1_weights)
         h1_out = hidden_activation(h1_in)
@@ -273,7 +279,7 @@ def main():
         hidden2_weights,
         hidden3_weights,
     ):
-        for turns in range(100):
+        for turns in range(1000):
             hidden1_grad_list = []
             hidden2_grad_list = []
             hidden3_grad_list = []
@@ -295,7 +301,6 @@ def main():
                     out,
                     h2_out,
                     h1_out,
-                    hidden1_weights,
                     hidden2_weights,
                     hidden3_weights,
                 )
