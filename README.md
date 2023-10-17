@@ -4,11 +4,14 @@ Trolley Flowey
 
 Improve the schedule of trolley transportation by predicting demand using variables like time of day, traffic, city events, etc to increase or decrease the number of ongoing trolleys on different routes dynamically.
 
+## Summary
+ This project aims to optimize the allocation of available resources in trolley transportation by predicting sudden changes in traffic and other areas. It is not intended to solve the issue of limited resources but to suggest possible alternatives for the spare resources that are available. 
 
- This project aims to optimize the allocation of available resources in trolley transportation by predicting sudden changes in traffic and other areas. It is not intended to solve the issue of limited resources but to suggest possible alternatives for the spare resources that are available.  My personal motivation for this idea is that my own route was recently halved in its ongoing trolleys, resulting in almost guaranteed overcrowding during specific hours and less convenient scheduling.
+## Background 
+My personal motivation for this idea is that my own route was recently halved in its ongoing trolleys, resulting in almost guaranteed overcrowding during specific hours and less convenient scheduling.
 
 
-## How it works
+## How is it used?
 The tool will identify routes that might be over or underrepresented based on data analysis and may be used to suggest changes in the future use of these routes. Its primary function is to quickly identify routes that might demand more resources in real time. It can take into consideration the weather, what type of day it is, and what popular destinations exist on the routes. Knowing the weather by itself won't tell us much. If it's bad weather then we can assume that all routes are going to be more popular since people will decide to go by trolley instead of walking. But knowing possible destinations combined with the weather and maybe the day might tell us where people are more likely to go. If it's sunny and the weekend, it's more likely the route going to an amusement park will be more popular. If it's raining and almost Christmas, it's likely that more people will go to the shopping mall. 
 
 Assumptions: If one route is to have increased resources, another should decrease correspondingly.
