@@ -36,19 +36,22 @@ def main():
             self.expected_demand = expected_demand
             self.destinations = [destination for destination in destinations]
 
-    Demand = {"low": 0.9, "normal": 1, "high": 1.1}
+    Demand = {"minimal": 0.8, "low": 0.9, "normal": 1, "high": 1.1, "exorbitant": 1.2}
     Weather = {"Sunny": 1.1, "Cloudy": 1, "Rainy": 0.9}
-    DayOfWeek = {"Weekend": 1.1, "Weekday": 0.9}
-    AttractionType = {"Leisure": 1.1, "Both": 1, "Work": 0.9}
+    AttractionType = {
+        "Leisure": {"Weekend": 1.1, "Weekday": 0.9},
+        "Both": {"Weekend": 1, "Weekday": 1},
+        "Work": {"Weekend": 0.9, "Weekday": 1.1},
+    }
     Routes = [
         Route(
             1,
             Demand["high"],
             [
                 Destination(
-                    "amusement park", True, AttractionType["Leisure"], Demand["high"]
+                    "amusement park", True, AttractionType["Leisure"], Demand["low"]
                 ),
-                Destination("Museum", False, AttractionType["Leisure"], Demand["low"]),
+                Destination("Museum", True, AttractionType["Leisure"], Demand["low"]),
             ],
         ),
         Route(
@@ -70,14 +73,13 @@ def main():
         ),
     ]
 
-    weather_today = {"mostLikely": Weather["Sunny"]}
-    dayOfWeek_today = {"dayOfWeek": DayOfWeek["Weekend"]}
+    weather_today = Weather["Rainy"]
 
     # Training data
     training_data = [
         {
             "weather": Weather["Rainy"],
-            "dayOfWeek": DayOfWeek["Weekend"],
+            "isWeekend": False,
             "route": Route(
                 1,
                 "normal",
@@ -95,7 +97,7 @@ def main():
         },
         {
             "weather": Weather["Cloudy"],
-            "dayOfWeek": DayOfWeek["Weekend"],
+            "isWeekend": True,
             "route": Route(
                 2,
                 "high",
@@ -109,7 +111,7 @@ def main():
         },
         {
             "weather": Weather["Rainy"],
-            "dayOfWeek": DayOfWeek["Weekday"],
+            "isWeekend": True,
             "route": Route(
                 3,
                 "low",
@@ -123,8 +125,8 @@ def main():
             "actual_demand": 0.8,
         },
         {
-            "weather": Weather["Sunny"],
-            "dayOfWeek": DayOfWeek["Weekend"],
+            "weather": Weather["Rainy"],
+            "isWeekend": False,
             "route": Route(
                 4,
                 "high",
@@ -141,7 +143,7 @@ def main():
         },
         {
             "weather": Weather["Cloudy"],
-            "dayOfWeek": DayOfWeek["Weekday"],
+            "isWeekend": True,
             "route": Route(
                 5,
                 "normal",
@@ -151,7 +153,7 @@ def main():
         },
         {
             "weather": Weather["Rainy"],
-            "dayOfWeek": DayOfWeek["Weekend"],
+            "isWeekend": False,
             "route": Route(
                 6,
                 "high",
@@ -173,8 +175,8 @@ def main():
 
     test_data = [
         {
-            "weather": weather_today["mostLikely"],
-            "dayOfWeek": dayOfWeek_today["dayOfWeek"],
+            "weather": weather_today,
+            "isWeekend": False,
             "route": route,
         }
         for route in Routes
@@ -252,12 +254,15 @@ def main():
             if data["route"].destinations
             else 0
         )
-        day_of_week_input = np.mean(
-            [
-                destination.attraction_type * data["dayOfWeek"]
-                for destination in data["route"].destinations
-            ]
-        )
+        values = []
+        for destination in data["route"].destinations:
+            if data["isWeekend"]:
+                values.append(destination.attraction_type["Weekend"])
+            else:
+                values.append(destination.attraction_type["Weekday"])
+        day_of_week_input = np.mean(values) if values else 0
+        
+        print("ID:", data["route"].route_id, day_of_week_input)
         # Create an input array with the averages
         input_array = np.array(
             [weather_input, destination_demand_input, day_of_week_input]
@@ -324,6 +329,16 @@ def main():
 
         return hidden1_weights, hidden2_weights, hidden3_weights
 
+    def closest(out):
+        min_diff_demand = "low"
+        min_diff = abs(Demand["low"] - out)
+
+        for demand in Demand:
+            if abs(Demand[demand] - out) < min_diff:
+                min_diff_demand = demand
+                min_diff = abs(Demand[demand] - out)
+        return min_diff_demand
+
     def test_model(test_data, hidden1_weights, hidden2_weights, hidden3_weights):
         for data in test_data:
             (
@@ -332,7 +347,7 @@ def main():
                 _,
             ) = predict_demand(data, hidden1_weights, hidden2_weights, hidden3_weights)
             print("ID:", data["route"].route_id)
-            print("Predicted demand:", out)
+            print("Predicted demand:", closest(out))
 
     # Train the model
     hidden1_weights, hidden2_weights, hidden3_weights = train_model(
